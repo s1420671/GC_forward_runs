@@ -1,0 +1,138 @@
+@author: s1420671
+"""
+
+###
+#
+# How to find the emissions for each region
+#
+###
+
+from netCDF4 import Dataset
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+date = ['200401','200402','200403','200404','200405','200406','200407','200408',
+        '200409','200410','200411','200412','200501','200502','200503','200504',
+        '200505','200506','200507','200508','200509','200510','200511','200512',
+        '200601','200602','200603','200604','200605','200606','200607','200608',
+        '200609','200610','200611','200612','200701','200702','200703','200704',
+        '200705','200706','200707','200708','200709','200710','200711','200712',
+        '200801','200802','200803','200804','200805','200806','200807','200808',
+        '200809','200810','200811','200812','200901','200902','200903','200904',
+        '200905','200906','200907','200908','200909','200910','200911','200912',
+        '201001','201002','201003','201004','201005','201006','201007','201008',
+        '201009','201010','201011','201012','201101','201102','201103','201104',
+        '201105','201106','201107','201108','201109','201110','201111','201112',
+        '201201','201202','201203','201204','201205','201206','201207','201208',
+        '201209','201210','201211','201212','201301','201302','201303','201304',
+        '201305','201306','201307','201308','201309','201310','201311','201312',
+        '201401','201402','201403','201404','201405','201406','201407','201408',
+        '201409','201410','201411','201412','201501','201502','201503','201504',
+        '201505','201506','201507','201508','201509','201510','201611','201512',
+        '201601','201602','201603','201604','201605','201606','201607','201608',
+        '201609','201610','201611','201612']
+nmonths=len(date)
+
+mapnames = ['aus', 'euro','eubor','eutemp','nafrica','nabor','natemp','oceans',
+       'safrica','satemp','satrop','tropicalasia']
+
+
+
+GC_12c=[]
+for m in range(len(mapnames)):
+    os.chdir('/geos/u73/s1420671/code/maps/transcom_regions')
+    mapr = ''+mapnames[m]+'.nc'
+    #print(mapr)
+    fh = Dataset(mapr, mode='r')
+    maps = fh.variables['map'][:]
+    fh.close()
+    os.chdir('/geos/d21/s1420671/12CH4/forward')
+    
+    for n in range(len(date)):  
+        methane_13c= 'out.{}01.nc'.format((str(date[n])))
+        fh = Dataset(methane_13c, mode='r') 
+        D = fh.variables['CH4-EMIS__CH4-TOT'][:]
+        fh.close()
+        GC_12c = np.append(GC_12c, np.mean(D[0,:,:]*maps))
+
+
+    
+    
+GC_pri=[]
+
+#read in methane 13c data
+for m in range(len(mapnames)):
+    os.chdir('/geos/u73/s1420671/code/maps/transcom_regions')
+    mapr = ''+mapnames[m]+'.nc'
+    #print(mapr)
+    fh = Dataset(mapr, mode='r')
+    maps = fh.variables['map'][:]
+    fh.close()
+    os.chdir('/geos/d21/s1420671/jacobian/13CH4/14yr/forward/allyears_prior')
+    
+    for n in range(len(datei)):  
+        methane_13c= 'out.{}01.nc'.format((str(datei[n])))
+        fh = Dataset(methane_13c, mode='r') 
+        D = fh.variables['CH4-EMIS__CH4-TOT'][:]
+        fh.close()
+        GC_pri = np.append(GC_pri, np.mean(D[0,:,:]*maps))
+        
+    
+    
+        
+GC_c13=[]
+
+#read in methane 13c data
+for m in range(len(mapnames)):
+    os.chdir('/geos/u73/s1420671/code/maps/transcom_regions')
+    mapr = ''+mapnames[m]+'.nc'
+    #print(mapr)
+    fh = Dataset(mapr, mode='r')
+    maps = fh.variables['map'][:]
+    fh.close()
+    os.chdir('/geos/d21/s1420671/jacobian/13CH4/14yr/forward/prior_RF')
+
+    for n in range(len(datei)):
+        methane_13c= 'out.{}01.nc'.format((str(datei[n])))
+        fh = Dataset(methane_13c, mode='r') 
+        D = fh.variables['CH4-EMIS__CH4-TOT'][:]
+        fh.close()
+        GC_c13 = np.append(GC_c13, np.mean(D[0,:,:]*maps))
+
+
+
+totpri = GC_pri+GC_12c
+totpos = GC_c13+GC_12c
+emisdif = totpri - totpos
+
+import pandas as pd
+x = pd.date_range(start='1/1/2004', end='1/1/2017', periods=nmonths)
+z =np.zeros(156)
+
+
+fig=plt.figure()
+fig.set_figheight(20)
+fig.set_figwidth(30)
+
+mo=0
+for plot in range(len(mapnames)):
+    plt.rc('font', size=10)
+    plt.subplot(3,4,plot+1)
+    #plt.plot(x,totpos[mo:mo+156],x,totpri[mo:mo+156])
+    plt.plot(x,emisdif[mo:mo+156],x,z)
+    plt.title(mapnames[plot], fontsize=20)
+    mo=mo+156
+    if plot == 0:
+        plt.ylabel('Emissions (kg)', fontsize=20)
+    if plot == 4:
+        plt.ylabel('Emissions (kg)', fontsize=20)
+    if plot == 8:
+        plt.ylabel('Emissions (kg)', fontsize=20)
+        plt.xlabel('Year', fontsize=20)
+    if plot == 9:
+        plt.xlabel('Year', fontsize=20)
+    if plot == 10:
+        plt.xlabel('Year', fontsize=20)
+    if plot == 11:
+        plt.xlabel('Year', fontsize=20)
